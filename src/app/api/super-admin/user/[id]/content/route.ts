@@ -1,0 +1,24 @@
+import { NextRequest, NextResponse } from "next/server";
+import { readKnowledge } from "@/lib/storage";
+
+function isSuperAdmin(req: NextRequest) {
+  return req.cookies.get("sa_token")?.value === process.env.SUPER_ADMIN_PASSWORD;
+}
+
+export async function GET(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  if (!isSuperAdmin(req))
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const { id } = await params;
+
+  const knowledge = await readKnowledge(id);
+
+  return NextResponse.json({
+    content: knowledge.content || "",
+    systemPrompt: knowledge.systemPrompt || knowledge.content || "",
+    url: knowledge.url || "",
+  });
+}
