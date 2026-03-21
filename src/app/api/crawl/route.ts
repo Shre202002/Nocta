@@ -98,7 +98,7 @@ export async function POST(req: NextRequest) {
 
 
 
-                const existing = readKnowledge(userId);
+                const existing = await readKnowledge(userId);
                 const combinedContent = existing.url === url
                     ? existing.content + "\n" + allContent.join("\n").slice(0, 8000)
                     : allContent.join("\n").slice(0, 12000);
