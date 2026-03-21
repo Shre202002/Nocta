@@ -29,7 +29,7 @@ export default function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
     const [logs, setLogs] = useState<LogEntry[]>([]);
     const [crawlDone, setCrawlDone] = useState(false);
 
-    const [activeTab, setActiveTab] = useState<"crawl" | "preview" | "prompt">("crawl");
+    const [activeTab, setActiveTab] = useState<"crawl" | "preview" | "prompt" | "theme">("crawl");
     const [previewContent, setPreviewContent] = useState("");
     const [systemPrompt, setSystemPrompt] = useState("");
     const [promptSaved, setPromptSaved] = useState(false);
@@ -184,7 +184,7 @@ export default function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
                     </button>
                 </div>
 
-                { (
+                {(
                     <>
                         {/* Tabs */}
                         <div className="flex border-b border-[#1e1e3a]">
