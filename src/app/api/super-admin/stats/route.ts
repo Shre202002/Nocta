@@ -10,29 +10,31 @@ export async function GET(req: NextRequest) {
   if (!isSuperAdmin(req))
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const accounts = readAccounts();
-  const chatLogs = readChatLogs();
+  const accounts = await readAccounts();        // ← await
+  const chatLogs = await readChatLogs();        // ← await
 
-  const users = accounts.map((acc) => {
-    const knowledge = readKnowledge(acc.id);
-    const log = chatLogs[acc.id];
-    return {
-      id: acc.id,
-      email: acc.email,
-      plan: acc.plan,
-      createdAt: acc.createdAt,
-      crawlCount: acc.crawlCount || 0,
-      siteUrl: knowledge.url || "",
-      crawledAt: knowledge.crawledAt || "",
-      contentLength: knowledge.content?.length || 0,
-      apiKey: knowledge.apiKey
-        ? knowledge.apiKey.slice(0, 8) + "••••••••"
-        : "Not set",
-      messageCount: log?.messageCount || 0,
-      lastActive: log?.lastActive || "",
-      hasBot: !!knowledge.content,
-    };
-  });
+  const users = await Promise.all(              // ← await Promise.all
+    accounts.map(async (acc) => {
+      const knowledge = await readKnowledge(acc.id);  // ← await
+      const log = chatLogs[acc.id];
+      return {
+        id: acc.id,
+        email: acc.email,
+        plan: acc.plan,
+        createdAt: acc.createdAt,
+        crawlCount: acc.crawlCount || 0,
+        siteUrl: knowledge.url || "",
+        crawledAt: knowledge.crawledAt || "",
+        contentLength: knowledge.content?.length || 0,
+        apiKey: knowledge.apiKey
+          ? knowledge.apiKey.slice(0, 8) + "••••••••"
+          : "Not set",
+        messageCount: log?.messageCount || 0,
+        lastActive: log?.lastActive || "",
+        hasBot: !!knowledge.content,
+      };
+    })
+  );
 
   const totalUsers = users.length;
   const paidUsers = users.filter((u) => u.plan === "paid").length;
@@ -41,7 +43,6 @@ export async function GET(req: NextRequest) {
   const totalMessages = users.reduce((s, u) => s + u.messageCount, 0);
   const configuredBots = users.filter((u) => u.hasBot).length;
 
-  // Growth: users per day (last 7 days)
   const growth: Record<string, number> = {};
   accounts.forEach((acc) => {
     const day = acc.createdAt?.slice(0, 10);
