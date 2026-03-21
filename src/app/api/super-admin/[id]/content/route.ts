@@ -8,10 +8,12 @@ function isSuperAdmin(req: NextRequest) {
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
   if (!isSuperAdmin(req))
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const knowledge = readKnowledge(params.id);
+
+  const knowledge = await readKnowledge(params.id);
+
   return NextResponse.json({
     content: knowledge.content || "",
-    systemPrompt: knowledge.systemPrompt || "",
+    systemPrompt: knowledge.systemPrompt || knowledge.content || "",
     url: knowledge.url || "",
   });
 }

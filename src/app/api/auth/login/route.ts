@@ -5,7 +5,7 @@ import { signToken } from "@/lib/auth";
 
 export async function POST(req: NextRequest) {
   const { email, password } = await req.json();
-  const account = findAccount(email);
+  const account = await findAccount(email);
 
   if (!account || !(await bcrypt.compare(password, account.passwordHash)))
     return NextResponse.json({ error: "Invalid email or password." }, { status: 401 });

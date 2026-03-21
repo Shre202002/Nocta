@@ -4,9 +4,12 @@ import { readKnowledge, writeKnowledge } from "@/lib/storage";
 
 export async function POST(req: NextRequest) {
   const userId = await getUserIdFromCookie();
-  if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!userId)
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
   const { content } = await req.json();
-  const existing = readKnowledge(userId);
-  writeKnowledge(userId, { ...existing, content });
+  const existing = await readKnowledge(userId);  // ← await added
+  await writeKnowledge(userId, { ...existing, content });  // ← await added
+
   return NextResponse.json({ success: true });
 }

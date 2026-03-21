@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { v4 as uuid } from "uuid";
-import { readAccounts, writeAccounts, findAccount } from "@/lib/storage";
+import { findAccount, writeAccount } from "@/lib/storage";
 import { signToken } from "@/lib/auth";
 
 export async function POST(req: NextRequest) {
@@ -10,14 +10,18 @@ export async function POST(req: NextRequest) {
   if (!email || !password)
     return NextResponse.json({ error: "Email and password required." }, { status: 400 });
 
-  if (findAccount(email))
+  if (await findAccount(email))
     return NextResponse.json({ error: "Email already registered." }, { status: 400 });
 
   const passwordHash = await bcrypt.hash(password, 10);
   const id = uuid();
-  const accounts = readAccounts();
-  accounts.push({ id, email, passwordHash, createdAt: new Date().toISOString(), plan: "trial", crawlCount: 0 });
-  writeAccounts(accounts);
+
+  await writeAccount({
+    id, email, passwordHash,
+    createdAt: new Date().toISOString(),
+    plan: "trial",
+    crawlCount: 0,
+  });
 
   const token = signToken(id);
   const res = NextResponse.json({ success: true });

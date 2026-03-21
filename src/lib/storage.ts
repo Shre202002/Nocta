@@ -1,26 +1,4 @@
-import fs from "fs";
-import path from "path";
-
-const usersDir = path.join(process.cwd(), "data", "users");
-const accountsFile = path.join(process.cwd(), "data", "accounts.json");
-
-// Ensure directories exist
-if (!fs.existsSync(usersDir)) fs.mkdirSync(usersDir, { recursive: true });
-if (!fs.existsSync(accountsFile)) fs.writeFileSync(accountsFile, "[]");
-
-export type Account = {
-    id: string;
-    email: string;
-    passwordHash: string;
-    createdAt: string;
-    plan: "trial" | "paid";
-    crawlCount: number;
-};
-export type ChatLog = {
-    userId: string;
-    messageCount: number;
-    lastActive: string;
-};
+import { getDb } from "./db";
 
 export type Theme = {
   bubbleColor: string;
@@ -39,60 +17,109 @@ export type KnowledgeData = {
   theme?: Theme;
 };
 
-const logsFile = path.join(process.cwd(), "data", "chatlogs.json");
-if (!fs.existsSync(logsFile)) fs.writeFileSync(logsFile, "{}");
+export type Account = {
+  id: string;
+  email: string;
+  passwordHash: string;
+  createdAt: string;
+  plan: "trial" | "paid";
+  crawlCount: number;
+};
 
-export function readChatLogs(): Record<string, ChatLog> {
-    try {
-        return JSON.parse(fs.readFileSync(logsFile, "utf-8"));
-    } catch {
-        return {};
-    }
+export type ChatLog = {
+  userId: string;
+  messageCount: number;
+  lastActive: string;
+};
+
+// ── Accounts ─────────────────────────────────────────────
+
+export async function readAccounts(): Promise<Account[]> {
+  const db = await getDb();
+  return db.collection<Account>("accounts").find({}).toArray();
 }
 
-export function incrementMessageCount(userId: string): void {
-    const logs = readChatLogs();
-    if (!logs[userId]) {
-        logs[userId] = { userId, messageCount: 0, lastActive: "" };
-    }
-    logs[userId].messageCount += 1;
-    logs[userId].lastActive = new Date().toISOString();
-    fs.writeFileSync(logsFile, JSON.stringify(logs, null, 2));
+export async function findAccount(email: string): Promise<Account | undefined> {
+  const db = await getDb();
+  const account = await db.collection<Account>("accounts").findOne({ email });
+  return account ?? undefined;
 }
 
-
-// Knowledge (per user)
-export function readKnowledge(userId: string): KnowledgeData {
-    const file = path.join(usersDir, `${userId}.json`);
-    try {
-        return JSON.parse(fs.readFileSync(file, "utf-8"));
-    } catch {
-        return { url: "", apiKey: "", content: "", crawledAt: "" };
-    }
+export async function findAccountById(id: string): Promise<Account | undefined> {
+  const db = await getDb();
+  const account = await db.collection<Account>("accounts").findOne({ id });
+  return account ?? undefined;
 }
 
-export function writeKnowledge(userId: string, data: KnowledgeData): void {
-    const file = path.join(usersDir, `${userId}.json`);
-    fs.writeFileSync(file, JSON.stringify(data, null, 2));
+export async function writeAccount(account: Account): Promise<void> {
+  const db = await getDb();
+  await db.collection<Account>("accounts").updateOne(
+    { id: account.id },
+    { $set: account },
+    { upsert: true }
+  );
 }
 
-// Accounts
-export function readAccounts(): Account[] {
-    try {
-        return JSON.parse(fs.readFileSync(accountsFile, "utf-8"));
-    } catch {
-        return [];
-    }
+export async function writeAccounts(accounts: Account[]): Promise<void> {
+  const db = await getDb();
+  const ops = accounts.map((acc) => ({
+    updateOne: {
+      filter: { id: acc.id },
+      update: { $set: acc },
+      upsert: true,
+    },
+  }));
+  if (ops.length > 0) await db.collection<Account>("accounts").bulkWrite(ops);
 }
 
-export function writeAccounts(accounts: Account[]): void {
-    fs.writeFileSync(accountsFile, JSON.stringify(accounts, null, 2));
+export async function deleteAccount(id: string): Promise<void> {
+  const db = await getDb();
+  await db.collection<Account>("accounts").deleteOne({ id });
 }
 
-export function findAccount(email: string): Account | undefined {
-    return readAccounts().find((a) => a.email === email);
+// ── Knowledge ─────────────────────────────────────────────
+
+export async function readKnowledge(userId: string): Promise<KnowledgeData> {
+  const db = await getDb();
+  const doc = await db.collection<KnowledgeData & { userId: string }>("knowledge").findOne({ userId });
+  if (!doc) return { url: "", apiKey: "", content: "", crawledAt: "" };
+  const { _id, userId: _uid, ...rest } = doc as any;
+  return rest;
 }
 
-export function findAccountById(id: string): Account | undefined {
-    return readAccounts().find((a) => a.id === id);
+export async function writeKnowledge(userId: string, data: KnowledgeData): Promise<void> {
+  const db = await getDb();
+  await db.collection("knowledge").updateOne(
+    { userId },
+    { $set: { userId, ...data } },
+    { upsert: true }
+  );
+}
+
+export async function deleteKnowledge(userId: string): Promise<void> {
+  const db = await getDb();
+  await db.collection("knowledge").deleteOne({ userId });
+}
+
+// ── Chat Logs ─────────────────────────────────────────────
+
+export async function readChatLogs(): Promise<Record<string, ChatLog>> {
+  const db = await getDb();
+  const logs = await db.collection<ChatLog>("chatlogs").find({}).toArray();
+  const result: Record<string, ChatLog> = {};
+  logs.forEach((log) => { result[log.userId] = log; });
+  return result;
+}
+
+export async function incrementMessageCount(userId: string): Promise<void> {
+  const db = await getDb();
+  await db.collection("chatlogs").updateOne(
+    { userId },
+    {
+      $inc: { messageCount: 1 },
+      $set: { lastActive: new Date().toISOString() },
+      $setOnInsert: { userId },
+    },
+    { upsert: true }
+  );
 }

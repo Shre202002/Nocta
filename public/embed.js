@@ -180,13 +180,13 @@
   let currentTheme = null;
 
   function saveMessages() {
-    try { sessionStorage.setItem(STORAGE_KEY, JSON.stringify(messages)); } catch (e) {}
+    try { sessionStorage.setItem(STORAGE_KEY, JSON.stringify(messages)); } catch (e) { }
   }
   function loadMessages() {
     try { const s = sessionStorage.getItem(STORAGE_KEY); return s ? JSON.parse(s) : []; } catch { return []; }
   }
   function saveOpenState(open) {
-    try { sessionStorage.setItem(OPEN_KEY, open ? "1" : "0"); } catch {}
+    try { sessionStorage.setItem(OPEN_KEY, open ? "1" : "0"); } catch { }
   }
   function loadOpenState() {
     try { return sessionStorage.getItem(OPEN_KEY) === "1"; } catch { return false; }
@@ -201,7 +201,7 @@
         currentTheme = data.theme;
         return data.theme;
       }
-    } catch {}
+    } catch { }
     return null;
   }
 
@@ -354,32 +354,83 @@
   async function sendMessage(text) {
     const userText = (text || inputEl.value).trim();
     if (!userText || loading) return;
+
     messages.push({ role: "user", content: userText });
     saveMessages();
     inputEl.value = "";
     sendBtn.disabled = true;
     setLoading(true);
     renderMessages();
+
     const prevError = messagesEl.querySelector(".cb-error");
     if (prevError) prevError.remove();
+
     try {
       const res = await fetch(BASE_URL + "/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ messages, userId }),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Error");
-      messages.push({ role: "assistant", content: data.reply });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Error");
+      }
+
+      // Create streaming bot message bubble
+      let streamedText = "";
+      messages.push({ role: "assistant", content: "" });
       saveMessages();
+      renderMessages();
+
+      // Get the last bot bubble in DOM
+      const allBubbles = messagesEl.querySelectorAll(".cb-bubble-msg.assistant");
+      const streamBubble = allBubbles[allBubbles.length - 1];
+
+      // Read SSE stream
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value);
+        const lines = chunk.split("\n").filter(l => l.startsWith("data:"));
+
+        for (const line of lines) {
+          try {
+            const data = JSON.parse(line.replace("data: ", ""));
+
+            if (data.token && streamBubble) {
+              streamedText += data.token;
+              streamBubble.textContent = streamedText;
+              messagesEl.scrollTop = messagesEl.scrollHeight;
+              // ← Add this delay between tokens
+              await new Promise(resolve => setTimeout(resolve, 18));
+            }
+
+            if (data.done) {
+              messages[messages.length - 1].content = streamedText;
+              saveMessages();
+            }
+
+            if (data.error) throw new Error(data.error);
+          } catch { }
+        }
+      }
+
     } catch (err) {
+      // Remove the empty assistant message if streaming failed
+      if (messages[messages.length - 1]?.content === "") {
+        messages.pop();
+      }
       const errorEl = document.createElement("div");
       errorEl.className = "cb-error";
       errorEl.textContent = "⚠️ " + (err.message || "Something went wrong.");
       messagesEl.appendChild(errorEl);
     } finally {
       setLoading(false);
-      renderMessages();
       inputEl.focus();
     }
   }

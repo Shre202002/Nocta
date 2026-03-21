@@ -5,37 +5,37 @@ import { useSearchParams } from "next/navigation";
 type Message = { role: "user" | "assistant"; content: string };
 
 const SUGGESTIONS = [
-    "What can you help me with?",
-    "Tell me about this website",
-    "How do I get started?",
-    "What are your main features?",
+  "What can you help me with?",
+  "Tell me about this website",
+  "How do I get started?",
+  "What are your main features?",
 ];
 
 function BotChat() {
-    const searchParams = useSearchParams();
-    const userId = searchParams.get("userId") || "";
-    const [messages, setMessages] = useState<Message[]>([]);
-    const [input, setInput] = useState("");
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState("");
-    const bottomRef = useRef<HTMLDivElement>(null);
-    const inputRef = useRef<HTMLInputElement>(null);
+  const searchParams = useSearchParams();
+  const userId = searchParams.get("userId") || "";
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [input, setInput] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const bottomRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
-    useEffect(() => {
-        bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-    }, [messages, loading]);
-    // Add this useEffect after the existing one
-    useEffect(() => {
-        if (!userId) return;
-        fetch(`/api/theme?userId=${userId}`)
-            .then((r) => r.json())
-            .then((data) => {
-                if (!data.theme) return;
-                const t = data.theme;
-                // Apply CSS variables dynamically
-                const style = document.getElementById("cb-bot-theme") || document.createElement("style");
-                style.id = "cb-bot-theme";
-                style.textContent = `
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages, loading]);
+  // Add this useEffect after the existing one
+  useEffect(() => {
+    if (!userId) return;
+    fetch(`/api/theme?userId=${userId}`)
+      .then((r) => r.json())
+      .then((data) => {
+        if (!data.theme) return;
+        const t = data.theme;
+        // Apply CSS variables dynamically
+        const style = document.getElementById("cb-bot-theme") || document.createElement("style");
+        style.id = "cb-bot-theme";
+        style.textContent = `
         .bot-avatar, .msg-avatar, .bot-empty-icon { background: ${t.headerColor} !important; }
         .bot-header { background: ${t.headerColor} !important; }
         .msg-bubble.user { background: ${t.userMsgColor} !important; }
@@ -44,39 +44,78 @@ function BotChat() {
         .bot-input-row:focus-within { border-color: ${t.accentColor}88 !important; }
         .bot-suggestion:hover { color: ${t.accentColor} !important; border-color: ${t.accentColor}44 !important; background: ${t.accentColor}11 !important; }
       `;
-                document.head.appendChild(style);
-            })
-            .catch(() => { });
-    }, [userId]);
-    
-    async function send(text?: string) {
-        const userText = text || input.trim();
-        if (!userText || loading) return;
-        const newMessages: Message[] = [...messages, { role: "user", content: userText }];
-        setMessages(newMessages);
-        setInput("");
-        setLoading(true);
-        setError("");
-        try {
-            const res = await fetch("/api/chat", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ messages: newMessages, userId }),
-            });
-            const data = await res.json();
-            if (!res.ok) throw new Error(data.error);
-            setMessages([...newMessages, { role: "assistant", content: data.reply }]);
-        } catch (err) {
-            setError(err instanceof Error ? err.message : "Something went wrong. Please try again.");
-        } finally {
-            setLoading(false);
-            inputRef.current?.focus();
-        }
-    }
+        document.head.appendChild(style);
+      })
+      .catch(() => { });
+  }, [userId]);
 
-    return (
-        <>
-            <style>{`
+  async function send(text?: string) {
+    const userText = text || input.trim();
+    if (!userText || loading) return;
+
+    const newMessages: Message[] = [...messages, { role: "user", content: userText }];
+    setMessages(newMessages);
+    setInput("");
+    setLoading(true);
+    setError("");
+
+    try {
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ messages: newMessages, userId }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error);
+      }
+
+      // Add empty assistant message to stream into
+      const streamMessages: Message[] = [...newMessages, { role: "assistant", content: "" }];
+      setMessages(streamMessages);
+
+      const reader = res.body!.getReader();
+      const decoder = new TextDecoder();
+      let streamedText = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value);
+        const lines = chunk.split("\n").filter(l => l.startsWith("data:"));
+
+        for (const line of lines) {
+          try {
+            const data = JSON.parse(line.replace("data: ", ""));
+
+            if (data.token) {
+              streamedText += data.token;
+              setMessages([
+                ...newMessages,
+                { role: "assistant", content: streamedText }
+              ]);
+              // ← Add this delay
+              await new Promise(resolve => setTimeout(resolve, 18));
+            }
+
+            if (data.error) throw new Error(data.error);
+          } catch { }
+        }
+      }
+
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Something went wrong.");
+    } finally {
+      setLoading(false);
+      inputRef.current?.focus();
+    }
+  }
+
+  return (
+    <>
+      <style>{`
         @import url('https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap');
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { font-family: 'DM Sans', sans-serif; }
@@ -362,120 +401,120 @@ function BotChat() {
         .bot-footer a { color: #a5b4fc; text-decoration: none; }
       `}</style>
 
-            <div className="bot-root">
-                {/* Header */}
-                <div className="bot-header">
-                    <div className="bot-avatar">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M13 2L3 14H12L11 22L21 10H12L13 2Z" fill="white" />
-                        </svg>
-                    </div>
-                    <div className="bot-header-info">
-                        <div className="bot-header-name">AI Assistant</div>
-                        <div className="bot-status">
-                            <div className={`bot-status-dot ${loading ? "loading" : ""}`} />
-                            <span>{loading ? "Typing..." : "Online"}</span>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Messages */}
-                <div className="bot-messages">
-                    {messages.length === 0 ? (
-                        <div className="bot-empty">
-                            <div className="bot-empty-icon">
-                                <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
-                                    <path d="M13 2L3 14H12L11 22L21 10H12L13 2Z" fill="white" />
-                                </svg>
-                            </div>
-                            <div>
-                                <div className="bot-empty-title">Hi there! 👋</div>
-                                <div className="bot-empty-sub">I'm trained on this website's content. Ask me anything!</div>
-                            </div>
-                            <div className="bot-suggestions">
-                                {SUGGESTIONS.map((s) => (
-                                    <button key={s} className="bot-suggestion" onClick={() => send(s)}>
-                                        {s}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-                    ) : (
-                        <>
-                            {messages.map((msg, i) => (
-                                <div key={i} className={`msg-row ${msg.role}`}>
-                                    {msg.role === "assistant" && (
-                                        <div className="msg-avatar">
-                                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
-                                                <path d="M13 2L3 14H12L11 22L21 10H12L13 2Z" fill="white" />
-                                            </svg>
-                                        </div>
-                                    )}
-                                    <div className={`msg-bubble ${msg.role}`}>
-                                        {msg.content}
-                                    </div>
-                                </div>
-                            ))}
-
-                            {loading && (
-                                <div className="msg-row">
-                                    <div className="msg-avatar">
-                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
-                                            <path d="M13 2L3 14H12L11 22L21 10H12L13 2Z" fill="white" />
-                                        </svg>
-                                    </div>
-                                    <div className="typing-bubble">
-                                        <div className="typing-dot" />
-                                        <div className="typing-dot" />
-                                        <div className="typing-dot" />
-                                    </div>
-                                </div>
-                            )}
-
-                            {error && (
-                                <div className="bot-error">⚠️ {error}</div>
-                            )}
-                        </>
-                    )}
-                    <div ref={bottomRef} />
-                </div>
-
-                {/* Input */}
-                <div className="bot-input-area">
-                    <div className="bot-input-row">
-                        <input
-                            ref={inputRef}
-                            className="bot-input"
-                            value={input}
-                            onChange={(e) => setInput(e.target.value)}
-                            onKeyDown={(e) => e.key === "Enter" && send()}
-                            placeholder="Ask a question..."
-                            disabled={loading}
-                        />
-                        <button
-                            className="bot-send"
-                            onClick={() => send()}
-                            disabled={loading || !input.trim()}
-                            aria-label="Send message"
-                        >
-                            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M2 21L23 12L2 3V10L17 12L2 14V21Z" />
-                            </svg>
-                        </button>
-                    </div>
-                    <div className="bot-footer">
-                        Powered by <a href="/" target="_blank">BotBase</a>
-                    </div>
-                </div>
+      <div className="bot-root">
+        {/* Header */}
+        <div className="bot-header">
+          <div className="bot-avatar">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M13 2L3 14H12L11 22L21 10H12L13 2Z" fill="white" />
+            </svg>
+          </div>
+          <div className="bot-header-info">
+            <div className="bot-header-name">AI Assistant</div>
+            <div className="bot-status">
+              <div className={`bot-status-dot ${loading ? "loading" : ""}`} />
+              <span>{loading ? "Typing..." : "Online"}</span>
             </div>
-        </>
-    );
+          </div>
+        </div>
+
+        {/* Messages */}
+        <div className="bot-messages">
+          {messages.length === 0 ? (
+            <div className="bot-empty">
+              <div className="bot-empty-icon">
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
+                  <path d="M13 2L3 14H12L11 22L21 10H12L13 2Z" fill="white" />
+                </svg>
+              </div>
+              <div>
+                <div className="bot-empty-title">Hi there! 👋</div>
+                <div className="bot-empty-sub">I'm trained on this website's content. Ask me anything!</div>
+              </div>
+              <div className="bot-suggestions">
+                {SUGGESTIONS.map((s) => (
+                  <button key={s} className="bot-suggestion" onClick={() => send(s)}>
+                    {s}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <>
+              {messages.map((msg, i) => (
+                <div key={i} className={`msg-row ${msg.role}`}>
+                  {msg.role === "assistant" && (
+                    <div className="msg-avatar">
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
+                        <path d="M13 2L3 14H12L11 22L21 10H12L13 2Z" fill="white" />
+                      </svg>
+                    </div>
+                  )}
+                  <div className={`msg-bubble ${msg.role}`}>
+                    {msg.content}
+                  </div>
+                </div>
+              ))}
+
+              {loading && (
+                <div className="msg-row">
+                  <div className="msg-avatar">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
+                      <path d="M13 2L3 14H12L11 22L21 10H12L13 2Z" fill="white" />
+                    </svg>
+                  </div>
+                  <div className="typing-bubble">
+                    <div className="typing-dot" />
+                    <div className="typing-dot" />
+                    <div className="typing-dot" />
+                  </div>
+                </div>
+              )}
+
+              {error && (
+                <div className="bot-error">⚠️ {error}</div>
+              )}
+            </>
+          )}
+          <div ref={bottomRef} />
+        </div>
+
+        {/* Input */}
+        <div className="bot-input-area">
+          <div className="bot-input-row">
+            <input
+              ref={inputRef}
+              className="bot-input"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && send()}
+              placeholder="Ask a question..."
+              disabled={loading}
+            />
+            <button
+              className="bot-send"
+              onClick={() => send()}
+              disabled={loading || !input.trim()}
+              aria-label="Send message"
+            >
+              <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path d="M2 21L23 12L2 3V10L17 12L2 14V21Z" />
+              </svg>
+            </button>
+          </div>
+          <div className="bot-footer">
+            Powered by <a href="/" target="_blank">BotBase</a>
+          </div>
+        </div>
+      </div>
+    </>
+  );
 }
 
 export default function BotPage() {
-    return (
-        <Suspense>
-            <BotChat />
-        </Suspense>
-    );
+  return (
+    <Suspense>
+      <BotChat />
+    </Suspense>
+  );
 }

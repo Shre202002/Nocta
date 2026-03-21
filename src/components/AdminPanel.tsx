@@ -20,9 +20,7 @@ type AdminPanelProps = {
 };
 
 export default function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
-    const [authed, setAuthed] = useState(false);
-    const [password, setPassword] = useState("");
-    const [passwordError, setPasswordError] = useState("");
+
 
     const [url, setUrl] = useState("");
     const [apiKey, setApiKey] = useState("");
@@ -57,31 +55,7 @@ export default function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
     }, [logs]);
 
     // Load existing data when panel opens
-    useEffect(() => {
-        if (authed && isOpen) {
-            fetch("/api/knowledge")
-                .then((r) => r.json())
-                .then((data) => {
-                    if (data.url) setUrl(data.url);
-                    if (data.apiKey) setApiKey(data.apiKey);
-                    if (data.content) {
-                        setPreviewContent(data.content);
-                        setSystemPrompt(data.content);
-                    }
-                    if (data.theme) setTheme(data.theme);
-                })
-                .catch(() => { });
-        }
-    }, [authed, isOpen]);
 
-    function handleLogin() {
-        if (password === ADMIN_PASSWORD) {
-            setAuthed(true);
-            setPasswordError("");
-        } else {
-            setPasswordError("Incorrect password.");
-        }
-    }
 
     function addExtraUrl() {
         setExtraUrls([...extraUrls, ""]);
@@ -210,35 +184,7 @@ export default function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
                     </button>
                 </div>
 
-                {!authed ? (
-                    /* Login Screen */
-                    <div className="flex flex-col items-center justify-center flex-1 px-6">
-                        <div className="w-full max-w-sm">
-                            <div className="text-center mb-6">
-                                <span className="text-4xl">🔐</span>
-                                <h3 className="text-white font-bold text-lg mt-2">Admin Access</h3>
-                                <p className="text-gray-500 text-sm">Enter password to continue</p>
-                            </div>
-                            <input
-                                type="password"
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                onKeyDown={(e) => e.key === "Enter" && handleLogin()}
-                                placeholder="Enter admin password"
-                                className="w-full bg-[#1a1a2e] border border-[#2a2a4a] text-white placeholder-gray-600 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 mb-3"
-                            />
-                            {passwordError && (
-                                <p className="text-red-400 text-xs mb-3">{passwordError}</p>
-                            )}
-                            <button
-                                onClick={handleLogin}
-                                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-xl text-sm transition"
-                            >
-                                Login →
-                            </button>
-                        </div>
-                    </div>
-                ) : (
+                { (
                     <>
                         {/* Tabs */}
                         <div className="flex border-b border-[#1e1e3a]">
