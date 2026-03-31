@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) {
   await writeAccount({
     id, email, passwordHash,
     createdAt: new Date().toISOString(),
-    plan: "trial",
+    plan: "free",
     crawlCount: 0,
   });
 
