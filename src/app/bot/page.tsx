@@ -503,7 +503,7 @@ function BotChat() {
             </button>
           </div>
           <div className="bot-footer">
-            Powered by <a href="/" target="_blank">BotBase</a>
+            Powered by <a href="/" target="_blank">Nocta</a>
           </div>
         </div>
       </div>

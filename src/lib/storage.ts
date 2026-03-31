@@ -10,20 +10,28 @@ export type Theme = {
 
 export type KnowledgeData = {
   url: string;
-  apiKey: string;
+  // apiKey: string; --> FOr V2 Where We would Be adding the Our API key and Intigrate the CB
   content: string;
   crawledAt: string;
   systemPrompt?: string;
   theme?: Theme;
 };
 
+
+
 export type Account = {
   id: string;
   email: string;
   passwordHash: string;
   createdAt: string;
-  plan: "trial" | "paid";
+  plan: "free" | "starter" | "pro";
   crawlCount: number;
+  subscription?: {
+    provider: "razorpay" | "stripe";
+    subscriptionId: string;
+    status: "active" | "cancelled" | "expired";
+    currentPeriodEnd: string;
+  };
 };
 
 export type ChatLog = {
@@ -77,12 +85,18 @@ export async function deleteAccount(id: string): Promise<void> {
   await db.collection<Account>("accounts").deleteOne({ id });
 }
 
+export const PLAN_LIMITS = {
+  free:    { messagesPerMonth: 100,   websites: 1, removeBranding: false },
+  starter: { messagesPerMonth: 1000,  websites: 1, removeBranding: true },
+  pro:     { messagesPerMonth: 10000, websites: 5, removeBranding: true },
+};
+
 // ── Knowledge ─────────────────────────────────────────────
 
 export async function readKnowledge(userId: string): Promise<KnowledgeData> {
   const db = await getDb();
   const doc = await db.collection<KnowledgeData & { userId: string }>("knowledge").findOne({ userId });
-  if (!doc) return { url: "", apiKey: "", content: "", crawledAt: "" };
+  if (!doc) return { url: "",content: "", crawledAt: "" };
   const { _id, userId: _uid, ...rest } = doc as any;
   return rest;
 }

@@ -5,13 +5,14 @@ import { useState, useRef, useEffect } from "react";
 const ADMIN_PASSWORD = "admin123"; // Change this!
 
 type LogEntry = {
-    type: string;
-    message?: string;
-    page?: string;
-    count?: number;
-    chars?: number;
-    pagesCrawled?: number;
-    characters?: number;
+  type: string;
+  message?: string;
+  page?: string;
+  count?: number;
+  chars?: number;
+  pagesCrawled?: number;
+  characters?: number;
+  chunks?: number;  // ← ADD THIS
 };
 
 type AdminPanelProps = {
@@ -23,7 +24,7 @@ export default function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
 
 
     const [url, setUrl] = useState("");
-    const [apiKey, setApiKey] = useState("");
+    // const [apiKey, setApiKey] = useState("");
     const [extraUrls, setExtraUrls] = useState<string[]>([""]);
     const [crawling, setCrawling] = useState(false);
     const [logs, setLogs] = useState<LogEntry[]>([]);
@@ -72,7 +73,7 @@ export default function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
     }
 
     async function handleCrawl() {
-        if (!url || !apiKey) return;
+        if (!url ) return;
         setCrawling(true);
         setCrawlDone(false);
         setLogs([]);
@@ -82,7 +83,7 @@ export default function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
         const res = await fetch("/api/crawl", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ url, apiKey, extraUrls: validExtras }),
+            body: JSON.stringify({ url, extraUrls: validExtras }),
         });
 
         const reader = res.body!.getReader();
@@ -220,7 +221,7 @@ export default function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
                                     </div>
 
                                     {/* API Key */}
-                                    <div>
+                                    {/* <div>
                                         <label className="text-xs font-medium text-gray-400 mb-1 block">🔑 Groq API Key</label>
                                         <input
                                             type="password"
@@ -229,7 +230,7 @@ export default function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
                                             placeholder="gsk_xxxxxxxxxxxx"
                                             className="w-full bg-[#1a1a2e] border border-[#2a2a4a] text-white placeholder-gray-600 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600"
                                         />
-                                    </div>
+                                    </div> */}
 
                                     {/* Extra URLs */}
                                     <div>
@@ -267,7 +268,7 @@ export default function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
                                     {/* Crawl Button */}
                                     <button
                                         onClick={handleCrawl}
-                                        disabled={!url || !apiKey || crawling}
+                                        disabled={!url || crawling}
                                         className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed text-white font-semibold py-3 rounded-xl text-sm transition"
                                     >
                                         {crawling ? (
@@ -290,13 +291,15 @@ export default function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
                                                         log.type === "error" ? "text-red-400" :
                                                             log.type === "page_error" ? "text-yellow-500" :
                                                                 log.type === "crawling" ? "text-blue-300" :
-                                                                    "text-gray-400"
+                                                                    log.type === "embedding" ? "text-cyan-400" :  // ← ADD THIS
+                                                                        "text-gray-400"
                                                 }>
                                                     {log.type === "start" && `🚀 ${log.message}`}
                                                     {log.type === "crawling" && `🔍 [${log.count}] ${log.page}`}
                                                     {log.type === "page_done" && `✅ Extracted ${log.chars?.toLocaleString()} chars`}
                                                     {log.type === "page_error" && `⚠️ Failed: ${log.page}`}
-                                                    {log.type === "done" && `🎉 Done! ${log.pagesCrawled} pages, ${log.characters?.toLocaleString()} chars`}
+                                                    {log.type === "embedding" && `⚡ ${log.message}`}  {/* ← ADD THIS */}
+                                                    {log.type === "done" && `🎉 Done! ${log.pagesCrawled} pages, ${log.chunks || 0} chunks embedded`}
                                                     {log.type === "error" && `❌ ${log.message}`}
                                                 </div>
                                             ))}
