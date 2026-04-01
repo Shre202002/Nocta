@@ -3,36 +3,12 @@ import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 
 const FEATURES = [
-  {
-    icon: "🕷️",
-    title: "Crawl any website",
-    desc: "Paste a URL. Nocta scrapes every page, extracts clean content, and builds a knowledge base in seconds.",
-  },
-  {
-    icon: "🧠",
-    title: "AI trained on your content",
-    desc: "Your bot only answers from your website's data. No hallucinations. No off-topic replies.",
-  },
-  {
-    icon: "⚡",
-    title: "Embed in 30 seconds",
-    desc: "One script tag. A floating chat bubble appears on your site instantly — no coding required.",
-  },
-  {
-    icon: "🔒",
-    title: "Fully isolated per user",
-    desc: "Each chatbot is sandboxed. Your data stays yours — completely separated from every other user.",
-  },
-  {
-    icon: "🎨",
-    title: "Matches your brand",
-    desc: "Auto-detect your website's color palette. Nocta adapts to your brand — not the other way around.",
-  },
-  {
-    icon: "📊",
-    title: "Analytics dashboard",
-    desc: "Track messages, active users, and bot performance. Know exactly how your visitors engage.",
-  },
+  { icon: "◈", title: "Crawl any website", desc: "Paste a URL. Nocta scrapes every page, extracts clean content, and builds a knowledge base in seconds." },
+  { icon: "◎", title: "RAG-powered answers", desc: "Vector search finds only the most relevant chunks. No token waste. No hallucinations. Just precise answers." },
+  { icon: "◉", title: "Embed in 30 seconds", desc: "One script tag. A floating chat widget appears on your site instantly — no coding required." },
+  { icon: "◈", title: "Isolated per user", desc: "Each bot is fully sandboxed. Your data stays yours — completely separated from every other user." },
+  { icon: "◎", title: "Matches your brand", desc: "Auto-detect your website's color palette. Nocta adapts to your brand — not the other way around." },
+  { icon: "◉", title: "Real-time streaming", desc: "Word-by-word AI responses like ChatGPT. Visitors feel heard instantly — not waiting for a wall of text." },
 ];
 
 const STEPS = [
