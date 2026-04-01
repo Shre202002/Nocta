@@ -6,7 +6,7 @@ export const metadata = {
   description: "Turn any website into an AI chatbot. One embed. Live in 5 minutes.",
   
   icons: {
-    icon: "/logo-icon.png",
+    icon: "/share_icon.png",
   },
 };
 export default function RootLayout({
