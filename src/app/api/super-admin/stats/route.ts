@@ -10,12 +10,12 @@ export async function GET(req: NextRequest) {
   if (!isSuperAdmin(req))
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const accounts = await readAccounts();        // ← await
-  const chatLogs = await readChatLogs();        // ← await
+  const accounts = await readAccounts();
+  const chatLogs = await readChatLogs();
 
-  const users = await Promise.all(              // ← await Promise.all
+  const users = await Promise.all(
     accounts.map(async (acc) => {
-      const knowledge = await readKnowledge(acc.id);  // ← await
+      const knowledge = await readKnowledge(acc.id);
       const log = chatLogs[acc.id];
       return {
         id: acc.id,
@@ -26,19 +26,17 @@ export async function GET(req: NextRequest) {
         siteUrl: knowledge.url || "",
         crawledAt: knowledge.crawledAt || "",
         contentLength: knowledge.content?.length || 0,
-        apiKey: knowledge.apiKey
-          ? knowledge.apiKey.slice(0, 8) + "••••••••"
-          : "Not set",
         messageCount: log?.messageCount || 0,
         lastActive: log?.lastActive || "",
-        hasBot: !!knowledge.content,
+        hasBot: !!knowledge.url, // ← use url instead of content
       };
     })
   );
 
   const totalUsers = users.length;
-  const paidUsers = users.filter((u) => u.plan === "paid").length;
-  const trialUsers = users.filter((u) => u.plan === "trial").length;
+  const freeUsers = users.filter((u) => u.plan === "free").length;
+  const starterUsers = users.filter((u) => u.plan === "starter").length;
+  const proUsers = users.filter((u) => u.plan === "pro").length;
   const activeUsers = users.filter((u) => u.messageCount > 0).length;
   const totalMessages = users.reduce((s, u) => s + u.messageCount, 0);
   const configuredBots = users.filter((u) => u.hasBot).length;
@@ -50,7 +48,15 @@ export async function GET(req: NextRequest) {
   });
 
   return NextResponse.json({
-    stats: { totalUsers, paidUsers, trialUsers, activeUsers, totalMessages, configuredBots },
+    stats: {
+      totalUsers,
+      freeUsers,
+      starterUsers,
+      proUsers,
+      activeUsers,
+      totalMessages,
+      configuredBots,
+    },
     users,
     growth,
   });
