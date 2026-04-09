@@ -26,6 +26,11 @@ export type Account = {
   createdAt: string;
   plan: "free" | "starter" | "pro";
   crawlCount: number;
+  googleId?: string;        // ← ADD
+  name?: string;            // ← ADD
+  avatar?: string;          // ← ADD
+  resetToken?: string;      // ← ADD
+  resetTokenExpiry?: string; // ← ADD
   subscription?: {
     provider: "razorpay" | "stripe";
     subscriptionId: string;
@@ -86,9 +91,9 @@ export async function deleteAccount(id: string): Promise<void> {
 }
 
 export const PLAN_LIMITS = {
-  free:    { messagesPerMonth: 100,   websites: 1, removeBranding: false },
-  starter: { messagesPerMonth: 1000,  websites: 1, removeBranding: true },
-  pro:     { messagesPerMonth: 10000, websites: 5, removeBranding: true },
+  free: { messagesPerMonth: 100, websites: 1, removeBranding: false },
+  starter: { messagesPerMonth: 1000, websites: 1, removeBranding: true },
+  pro: { messagesPerMonth: 10000, websites: 5, removeBranding: true },
 };
 
 // ── Knowledge ─────────────────────────────────────────────
@@ -96,7 +101,7 @@ export const PLAN_LIMITS = {
 export async function readKnowledge(userId: string): Promise<KnowledgeData> {
   const db = await getDb();
   const doc = await db.collection<KnowledgeData & { userId: string }>("knowledge").findOne({ userId });
-  if (!doc) return { url: "",content: "", crawledAt: "" };
+  if (!doc) return { url: "", content: "", crawledAt: "" };
   const { _id, userId: _uid, ...rest } = doc as any;
   return rest;
 }
