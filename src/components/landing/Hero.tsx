@@ -32,7 +32,7 @@ export function Hero() {
     setMsgCount((prev) => prev + 1);
     setLoading(true);
     try {
-      const res = await fetch('/api/chat', {
+      const res = await fetch('/api/landing-chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ messages: updated }),
