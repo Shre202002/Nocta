@@ -79,3 +79,26 @@ body {
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; scroll-behavior: auto !important; }
 }
+
+
+.hero-grok-word {
+  position: relative;
+  font-weight: 400;
+  background: linear-gradient(92deg, rgba(255,255,255,0.82) 0%, rgba(164,190,255,0.95) 28%, rgba(255,255,255,0.84) 52%, rgba(133,165,255,0.95) 76%, rgba(255,255,255,0.8) 100%);
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: grok-shimmer 5s linear infinite, grok-float 6.5s ease-in-out infinite;
+  text-shadow: 0 0 30px rgba(126,160,255,0.25);
+}
+
+@keyframes grok-shimmer {
+  0% { background-position: 0% 50%; }
+  100% { background-position: 200% 50%; }
+}
+
+@keyframes grok-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}

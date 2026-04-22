@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react';
+import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
+import { DottedSurface } from '@/components/ui/dotted-surface';
 
 type Msg = { role: 'user' | 'assistant'; content: string };
 const MAX_MESSAGES = 5;
@@ -50,23 +51,24 @@ export function Hero() {
     }
   };
 
-  const canSend = useMemo(() => Boolean(input.trim()) && !loading && !limitReached, [input, loading, limitReached]);
+  const canSend = Boolean(input.trim()) && !loading && !limitReached;
 
   return (
     <section className="relative min-h-screen overflow-hidden bg-black px-6 pt-24">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_45%,rgba(159,192,255,0.55),transparent_42%)]" />
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_88%_62%,rgba(37,99,235,0.42),transparent_40%)]" />
-      <div className="absolute inset-0 bg-[linear-gradient(to_bottom,rgba(0,0,0,0.94),rgba(0,0,0,0.86)_38%,rgba(0,0,0,0.95))]" />
+      <DottedSurface />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_84%_48%,rgba(72,111,214,0.55),transparent_40%)]" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_92%_66%,rgba(191,212,255,0.45),transparent_35%)]" />
+      <div className="absolute inset-0 bg-[linear-gradient(to_bottom,rgba(0,0,0,0.95),rgba(0,0,0,0.87)_36%,rgba(0,0,0,0.96))]" />
 
       <div className="relative mx-auto flex min-h-[78vh] max-w-6xl flex-col">
         <div className="mt-auto pb-10 text-center">
-          <p className="text-[clamp(84px,18vw,220px)] leading-[0.9] tracking-[-0.05em] text-white/85">Nocta</p>
+          <p className="hero-grok-word text-[clamp(94px,20vw,250px)] leading-[0.88] tracking-[-0.06em] text-white/90">Nocta</p>
         </div>
 
         <div className="absolute inset-0 top-20 flex grow items-end justify-center pb-28">
           <div className="w-full max-w-3xl">
             <form
-              className="relative w-full items-center gap-3 overflow-hidden rounded-3xl bg-gradient-to-tr from-[rgba(54,244,164,0.06)] to-[rgba(54,244,164,0.2)] p-px"
+              className="relative w-full overflow-hidden rounded-3xl bg-gradient-to-tr from-[rgba(54,244,164,0.06)] to-[rgba(54,244,164,0.2)] p-px"
               onSubmit={(e) => {
                 e.preventDefault();
                 void sendMessage();
@@ -78,7 +80,7 @@ export function Hero() {
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={onKeyDown}
                 placeholder="What do you want to know?"
-                className="block h-[120px] w-full resize-none rounded-3xl border-none bg-black py-5 pl-4 pr-16 text-[20px] leading-7 text-white placeholder:text-white/45 focus:outline-none focus:ring-2 focus:ring-zinc-500"
+                className="block h-[120px] w-full resize-none rounded-3xl border-none bg-black py-5 pl-5 pr-16 text-[20px] leading-7 text-white placeholder:text-white/45 focus:outline-none focus:ring-2 focus:ring-zinc-500"
               />
               <div className="absolute bottom-2.5 right-2.5 flex items-center">
                 <button
