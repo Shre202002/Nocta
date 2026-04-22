@@ -1,31 +1,34 @@
-import Anthropic from '@anthropic-ai/sdk';
+import Groq from 'groq-sdk';
 import { NextResponse } from 'next/server';
-
-const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
 export async function POST(req: Request) {
   try {
     const { messages } = await req.json();
 
-    if (!process.env.ANTHROPIC_API_KEY) {
-      return NextResponse.json({ reply: 'Server missing ANTHROPIC_API_KEY.' }, { status: 500 });
+    if (!process.env.GROQ_API_KEY) {
+      return NextResponse.json({ reply: 'Server missing GROQ_API_KEY.' }, { status: 500 });
     }
 
-    const response = await client.messages.create({
-      model: 'claude-opus-4-5',
+    const client = new Groq({ apiKey: process.env.GROQ_API_KEY });
+
+    const completion = await client.chat.completions.create({
+      model: 'llama-3.3-70b-versatile',
       max_tokens: 150,
-      system: `You are Nocta AI — a sharp, helpful AI assistant embedded in the Nocta homepage.
-Answer in 1-3 sentences max. Be direct, smart, and slightly playful.
-Focus on AI, developer tools, automation, and code topics.
-Never break character. Never say you are Claude or made by Anthropic.`,
-      messages: (messages ?? []).map((m: { role: string; content: string }) => ({
-        role: m.role === 'assistant' ? 'assistant' : 'user',
-        content: m.content,
-      })),
+      temperature: 0.7,
+      messages: [
+        {
+          role: 'system',
+          content:
+            'You are Nocta AI in the homepage hero. Reply in 1-3 short sentences, direct and smart, focused on product, AI, automation, and developer workflows.',
+        },
+        ...(messages ?? []).map((m: { role: string; content: string }) => ({
+          role: m.role === 'assistant' ? 'assistant' : 'user',
+          content: m.content,
+        })),
+      ],
     });
 
-    const first = response.content[0];
-    const reply = first && first.type === 'text' ? first.text : '';
+    const reply = completion.choices[0]?.message?.content ?? '';
     return NextResponse.json({ reply });
   } catch {
     return NextResponse.json({ reply: 'Something went wrong. Try again.' }, { status: 500 });

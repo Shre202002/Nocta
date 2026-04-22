@@ -31,8 +31,8 @@ export function Navbar() {
         </nav>
 
         <div className="hidden items-center gap-3 md:flex">
-          <Button variant="ghost">Log in</Button>
-          <Button>Get Started</Button>
+          <Link href="/login"><Button variant="ghost">Log in</Button></Link>
+          <Link href="/register"><Button>Get Started</Button></Link>
         </div>
 
         <button aria-label="Open menu" className="md:hidden min-h-11 min-w-11 rounded-full border border-[var(--color-border-mid)] text-white" onClick={() => setOpen(true)}>☰</button>
@@ -41,6 +41,8 @@ export function Navbar() {
         <aside className={`absolute right-0 top-0 h-full w-[280px] bg-[var(--color-deep-black)] border-l border-[var(--color-border-mid)] p-6 transition-transform ${open ? 'translate-x-0' : 'translate-x-full'}`} onClick={(e) => e.stopPropagation()}>
           <div className="flex flex-col gap-4">
             {links.map((link) => <a key={link} href={`#${link.toLowerCase()}`} className="text-[16px] leading-6 text-[var(--color-text-secondary)]">{link}</a>)}
+            <Link href="/login" className="mt-4 text-[16px] leading-6 text-white">Log in</Link>
+            <Link href="/register" className="text-[16px] leading-6 text-[var(--color-accent)]">Get Started</Link>
           </div>
         </aside>
       </div>
