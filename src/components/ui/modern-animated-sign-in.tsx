@@ -13,29 +13,24 @@ import {
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
 
-type MouseEvt = React.MouseEvent<HTMLDivElement>;
-
-const EyeIcon = ({ open }: { open: boolean }) => (
-  <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-    {open ? (
-      <>
-        <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" />
-        <circle cx="12" cy="12" r="3" />
-      </>
-    ) : (
-      <>
-        <path d="M3 3l18 18" />
-        <path d="M10.6 10.6a2 2 0 0 0 2.8 2.8" />
-        <path d="M9.1 4.7A11.5 11.5 0 0 1 12 4c6.5 0 10 8 10 8a18.7 18.7 0 0 1-3.3 4.7" />
-        <path d="M6.6 6.6A18.4 18.4 0 0 0 2 12s3.5 8 10 8a10.7 10.7 0 0 0 5.4-1.4" />
-      </>
-    )}
+// Lucide-style icon set (local fallback for restricted env)
+const IconBase = ({ children, className = 'h-4 w-4' }: { children: ReactNode; className?: string }) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden>
+    {children}
   </svg>
 );
 
+export const Eye = ({ className }: { className?: string }) => <IconBase className={className}><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" /><circle cx="12" cy="12" r="3" /></IconBase>;
+export const EyeOff = ({ className }: { className?: string }) => <IconBase className={className}><path d="M3 3l18 18" /><path d="M9 9a4.2 4.2 0 0 0 6 6" /><path d="M2 12s3.5-7 10-7c1.8 0 3.3.5 4.7 1.2" /><path d="M18.7 15.7C17 17.6 14.8 19 12 19c-6.5 0-10-7-10-7" /></IconBase>;
+export const Mail = ({ className }: { className?: string }) => <IconBase className={className}><rect x="3" y="5" width="18" height="14" rx="2" /><path d="m4 7 8 6 8-6" /></IconBase>;
+export const Lock = ({ className }: { className?: string }) => <IconBase className={className}><rect x="4" y="11" width="16" height="10" rx="2" /><path d="M8 11V8a4 4 0 1 1 8 0v3" /></IconBase>;
+export const ArrowRight = ({ className }: { className?: string }) => <IconBase className={className}><path d="M5 12h14" /><path d="m13 5 7 7-7 7" /></IconBase>;
+
+type MouseEvt = React.MouseEvent<HTMLDivElement>;
+
 const Input = memo(
   forwardRef(function Input(
-    { className, type, ...props }: React.InputHTMLAttributes<HTMLInputElement>,
+    { className, type, icon, ...props }: React.InputHTMLAttributes<HTMLInputElement> & { icon?: ReactNode },
     ref: React.ForwardedRef<HTMLInputElement>,
   ) {
     const radius = 100;
@@ -49,76 +44,62 @@ const Input = memo(
 
     return (
       <div
-        style={{
-          background: `radial-gradient(${visible ? `${radius}px` : '0px'} circle at ${xy.x}px ${xy.y}px, #3b82f6, transparent 80%)`,
-        }}
+        style={{ background: `radial-gradient(${visible ? `${radius}px` : '0px'} circle at ${xy.x}px ${xy.y}px, #36f4a4, transparent 80%)` }}
         onMouseMove={handleMouseMove}
         onMouseEnter={() => setVisible(true)}
         onMouseLeave={() => setVisible(false)}
         className="group/input rounded-lg p-[2px] transition duration-300"
       >
-        <input
-          type={type}
-          className={cn(
-            'shadow-input flex h-10 w-full rounded-md border-none bg-gray-50 px-3 py-2 text-sm text-black transition duration-300 placeholder:text-neutral-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-zinc-800 dark:text-white dark:placeholder:text-neutral-600 dark:focus-visible:ring-neutral-600',
-            className,
-          )}
-          ref={ref}
-          {...props}
-        />
+        <div className="relative">
+          {icon && <span className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500">{icon}</span>}
+          <input
+            type={type}
+            className={cn(
+              'shadow-input flex h-11 w-full rounded-md border-none bg-gray-50 px-3 py-2 text-sm text-black transition duration-300 placeholder:text-neutral-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-zinc-800 dark:text-white dark:placeholder:text-neutral-600 dark:focus-visible:ring-neutral-600',
+              icon ? 'pl-9' : undefined,
+              className,
+            )}
+            ref={ref}
+            {...props}
+          />
+        </div>
       </div>
     );
   }),
 );
 Input.displayName = 'Input';
 
-type BoxRevealProps = {
-  children: ReactNode;
-  width?: string;
-  boxColor?: string;
-  className?: string;
-};
-
+type BoxRevealProps = { children: ReactNode; width?: string; boxColor?: string; className?: string };
 const BoxReveal = memo(function BoxReveal({ children, width = 'fit-content', boxColor = '#5046e6', className }: BoxRevealProps) {
   const ref = useRef<HTMLElement | null>(null);
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
     if (!ref.current) return;
-    const observer = new IntersectionObserver(([entry]) => {
-      if (entry.isIntersecting) setVisible(true);
-    }, { threshold: 0.15 });
+    const observer = new IntersectionObserver(([entry]) => { if (entry.isIntersecting) setVisible(true); }, { threshold: 0.15 });
     observer.observe(ref.current);
     return () => observer.disconnect();
   }, []);
 
   return (
     <section ref={ref} style={{ width }} className={cn('relative overflow-hidden', className)}>
-      <div className={cn('transition duration-700', visible ? 'translate-y-0 opacity-100' : 'translate-y-5 opacity-0')}>{children}</div>
+      <div className={cn('transition duration-700', visible ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0')}>{children}</div>
       {!visible && <div className="absolute inset-[4px] z-20 rounded" style={{ background: boxColor }} />}
     </section>
   );
 });
 
 type RippleProps = { mainCircleSize?: number; mainCircleOpacity?: number; numCircles?: number; className?: string };
-const Ripple = memo(function Ripple({ mainCircleSize = 210, mainCircleOpacity = 0.24, numCircles = 11, className = '' }: RippleProps) {
+const Ripple = memo(function Ripple({ mainCircleSize = 160, mainCircleOpacity = 0.22, numCircles = 8, className = '' }: RippleProps) {
   return (
-    <section className={`max-w-[50%] absolute inset-0 flex items-center justify-center [mask-image:linear-gradient(to_bottom,black,transparent)] ${className}`}>
+    <section className={`absolute inset-0 flex items-center justify-center [mask-image:linear-gradient(to_bottom,black,transparent)] ${className}`}>
       {Array.from({ length: numCircles }, (_, i) => {
-        const size = mainCircleSize + i * 70;
+        const size = mainCircleSize + i * 50;
         return (
           <span
             key={i}
-            className="absolute animate-ripple rounded-full border bg-foreground/15"
-            style={{
-              width: `${size}px`,
-              height: `${size}px`,
-              opacity: mainCircleOpacity - i * 0.03,
-              animationDelay: `${i * 0.06}s`,
-              top: '50%',
-              left: '50%',
-              transform: 'translate(-50%, -50%)',
-            }}
+            className="absolute animate-ripple rounded-full border border-zinc-700/40 bg-white/5"
+            style={{ width: `${size}px`, height: `${size}px`, opacity: mainCircleOpacity - i * 0.02, animationDelay: `${i * 0.08}s`, top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }}
           />
         );
       })}
@@ -127,22 +108,11 @@ const Ripple = memo(function Ripple({ mainCircleSize = 210, mainCircleOpacity = 
 });
 
 type OrbitingCirclesProps = { className?: string; children: ReactNode; reverse?: boolean; duration?: number; delay?: number; radius?: number; path?: boolean };
-const OrbitingCircles = memo(function OrbitingCircles({ className, children, reverse = false, duration = 20, delay = 10, radius = 50, path = true }: OrbitingCirclesProps) {
+const OrbitingCircles = memo(function OrbitingCircles({ className, children, reverse = false, duration = 20, delay = 10, radius = 60, path = true }: OrbitingCirclesProps) {
   return (
     <>
-      {path && (
-        <svg className="pointer-events-none absolute inset-0 size-full" aria-hidden>
-          <circle className="stroke-black/10 stroke-1 dark:stroke-white/10" cx="50%" cy="50%" r={radius} fill="none" />
-        </svg>
-      )}
-      <section
-        style={{
-          ['--duration' as string]: `${duration}`,
-          ['--radius' as string]: `${radius}`,
-          ['--delay' as string]: `${-delay}`,
-        }}
-        className={cn('absolute flex size-full transform-gpu animate-orbit items-center justify-center rounded-full border bg-black/10 [animation-delay:calc(var(--delay)*1000ms)] dark:bg-white/10', reverse && '[animation-direction:reverse]', className)}
-      >
+      {path && <svg className="pointer-events-none absolute inset-0 size-full" aria-hidden><circle className="stroke-zinc-700/40 stroke-1" cx="50%" cy="50%" r={radius} fill="none" /></svg>}
+      <section style={{ ['--duration' as string]: `${duration}`, ['--radius' as string]: `${radius}`, ['--delay' as string]: `${-delay}` }} className={cn('absolute flex size-full transform-gpu animate-orbit items-center justify-center rounded-full [animation-delay:calc(var(--delay)*1000ms)]', reverse && '[animation-direction:reverse]', className)}>
         {children}
       </section>
     </>
@@ -150,11 +120,10 @@ const OrbitingCircles = memo(function OrbitingCircles({ className, children, rev
 });
 
 type IconConfig = { className?: string; duration?: number; delay?: number; radius?: number; path?: boolean; reverse?: boolean; component: () => ReactNode };
-
-const TechOrbitDisplay = memo(function TechOrbitDisplay({ iconsArray, text = 'Animated Login' }: { iconsArray: IconConfig[]; text?: string }) {
+const TechOrbitDisplay = memo(function TechOrbitDisplay({ iconsArray, text = 'Nocta' }: { iconsArray: IconConfig[]; text?: string }) {
   return (
     <section className="relative flex h-full w-full flex-col items-center justify-center overflow-hidden rounded-lg">
-      <span className="pointer-events-none whitespace-pre-wrap bg-gradient-to-b from-black to-gray-300/80 bg-clip-text text-center text-7xl font-semibold leading-none text-transparent dark:from-white dark:to-slate-900/10">{text}</span>
+      <span className="pointer-events-none bg-gradient-to-b from-white to-zinc-400/70 bg-clip-text text-center text-6xl font-semibold leading-none text-transparent">{text}</span>
       {iconsArray.map((icon, index) => (
         <OrbitingCircles key={index} className={icon.className} duration={icon.duration} delay={icon.delay} radius={icon.radius} path={icon.path} reverse={icon.reverse}>
           {icon.component()}
@@ -186,7 +155,7 @@ const AnimatedForm = memo(function AnimatedForm({ header, subHeader, fields, sub
     event.preventDefault();
     const currentErrors: Record<string, string> = {};
     fields.forEach((field) => {
-      const el = (event.currentTarget.elements.namedItem(field.label) as HTMLInputElement | null);
+      const el = event.currentTarget.elements.namedItem(field.label) as HTMLInputElement | null;
       const value = el?.value ?? '';
       if (field.required && !value) currentErrors[field.label] = `${field.label} is required`;
       if (field.type === 'email' && value && !/\S+@\S+\.\S+/.test(value)) currentErrors[field.label] = 'Invalid email address';
@@ -203,64 +172,53 @@ const AnimatedForm = memo(function AnimatedForm({ header, subHeader, fields, sub
   };
 
   return (
-    <section className="mx-auto flex w-96 max-w-full flex-col gap-4">
-      <BoxReveal boxColor="var(--skeleton)"><h2 className="text-3xl font-bold text-neutral-800 dark:text-neutral-200">{header}</h2></BoxReveal>
-      {subHeader && <BoxReveal boxColor="var(--skeleton)" className="pb-2"><p className="max-w-sm text-sm text-neutral-600 dark:text-neutral-300">{subHeader}</p></BoxReveal>}
+    <section className="mx-auto flex w-full max-w-md flex-col gap-4 rounded-2xl border border-zinc-800/80 bg-zinc-950/70 p-6 backdrop-blur-md">
+      <BoxReveal boxColor="var(--skeleton)"><h2 className="text-3xl font-bold text-white">{header}</h2></BoxReveal>
+      {subHeader && <BoxReveal boxColor="var(--skeleton)"><p className="text-sm text-zinc-400">{subHeader}</p></BoxReveal>}
 
       {googleLogin && (
         <>
           <BoxReveal boxColor="var(--skeleton)" width="100%">
-            <button className="g-button group/btn h-10 w-full rounded-md border bg-transparent font-medium" type="button">
+            <button className="g-button group/btn h-11 w-full rounded-md border border-zinc-700 bg-zinc-900 font-medium text-white" type="button">
               <span className="flex h-full w-full items-center justify-center gap-3">
-                <Image src="https://cdn1.iconfinder.com/data/icons/google-s-logo/150/Google_Icons-09-512.png" width={20} height={20} alt="Google" />
+                <Image src="/logo-icon.png.png" width={20} height={20} alt="Nocta" className="rounded-sm" />
                 {googleLogin}
               </span>
               <BottomGradient />
             </button>
           </BoxReveal>
-          <BoxReveal boxColor="var(--skeleton)" width="100%"><section className="flex items-center gap-4"><hr className="flex-1 border border-dashed border-neutral-300 dark:border-neutral-700" /><p className="text-sm text-neutral-700 dark:text-neutral-300">or</p><hr className="flex-1 border border-dashed border-neutral-300 dark:border-neutral-700" /></section></BoxReveal>
+          <BoxReveal boxColor="var(--skeleton)" width="100%"><section className="flex items-center gap-4"><hr className="flex-1 border border-dashed border-zinc-700" /><p className="text-sm text-zinc-400">or</p><hr className="flex-1 border border-dashed border-zinc-700" /></section></BoxReveal>
         </>
       )}
 
       <form onSubmit={handleSubmit}>
         <section className="mb-4 grid grid-cols-1 gap-3">
-          {fields.map((field) => (
-            <section key={field.label} className="flex flex-col gap-2">
-              <BoxReveal boxColor="var(--skeleton)"><Label htmlFor={field.label}>{field.label} <span className="text-red-500">*</span></Label></BoxReveal>
-              <BoxReveal width="100%" boxColor="var(--skeleton)">
-                <section className="relative">
-                  <Input
-                    type={field.type === 'password' ? (visible ? 'text' : 'password') : field.type}
-                    id={field.label}
-                    name={field.label}
-                    placeholder={field.placeholder}
-                    onChange={field.onChange}
-                  />
-                  {field.type === 'password' && (
-                    <button type="button" onClick={() => setVisible((v) => !v)} className="absolute inset-y-0 right-0 flex items-center pr-3 text-sm">
-                      <EyeIcon open={visible} />
-                    </button>
-                  )}
-                </section>
-                <section className="h-4">{errors[field.label] && <p className="text-xs text-red-500">{errors[field.label]}</p>}</section>
-              </BoxReveal>
-            </section>
-          ))}
+          {fields.map((field) => {
+            const icon = field.type === 'email' ? <Mail className="h-4 w-4" /> : field.type === 'password' ? <Lock className="h-4 w-4" /> : undefined;
+            return (
+              <section key={field.label} className="flex flex-col gap-2">
+                <BoxReveal boxColor="var(--skeleton)"><Label htmlFor={field.label}>{field.label} <span className="text-red-500">*</span></Label></BoxReveal>
+                <BoxReveal width="100%" boxColor="var(--skeleton)">
+                  <section className="relative">
+                    <Input type={field.type === 'password' ? (visible ? 'text' : 'password') : field.type} id={field.label} name={field.label} placeholder={field.placeholder} onChange={field.onChange} icon={icon} />
+                    {field.type === 'password' && <button type="button" onClick={() => setVisible((v) => !v)} className="absolute inset-y-0 right-0 flex items-center pr-3 text-zinc-400">{visible ? <Eye className="h-5 w-5" /> : <EyeOff className="h-5 w-5" />}</button>}
+                  </section>
+                  <section className="h-4">{errors[field.label] && <p className="text-xs text-red-500">{errors[field.label]}</p>}</section>
+                </BoxReveal>
+              </section>
+            );
+          })}
         </section>
 
         <BoxReveal width="100%" boxColor="var(--skeleton)">{errorField && <p className="mb-4 text-sm text-red-500">{errorField}</p>}</BoxReveal>
         <BoxReveal width="100%" boxColor="var(--skeleton)">
-          <button className="group/btn relative block h-10 w-full rounded-md bg-gradient-to-br from-zinc-200 to-zinc-200 font-medium text-black outline-hidden dark:from-zinc-900 dark:to-zinc-900 dark:text-white" type="submit">
-            {submitButton} &rarr;
+          <button className="group/btn relative flex h-11 w-full items-center justify-center gap-2 rounded-md bg-[var(--color-accent)] font-medium text-black" type="submit">
+            {submitButton} <ArrowRight className="h-4 w-4" />
             <BottomGradient />
           </button>
         </BoxReveal>
 
-        {textVariantButton && goTo && (
-          <BoxReveal boxColor="var(--skeleton)">
-            <section className="mt-4 text-center"><button className="text-sm text-blue-500" onClick={goTo}>{textVariantButton}</button></section>
-          </BoxReveal>
-        )}
+        {textVariantButton && goTo && <BoxReveal boxColor="var(--skeleton)"><section className="mt-4 text-center"><button className="text-sm text-[var(--color-accent)]" onClick={goTo}>{textVariantButton}</button></section></BoxReveal>}
       </form>
     </section>
   );
@@ -274,29 +232,17 @@ const BottomGradient = () => (
 );
 
 interface AuthTabsProps {
-  formFields: {
-    header: string;
-    subHeader?: string;
-    fields: Field[];
-    submitButton: string;
-    textVariantButton?: string;
-  };
+  formFields: { header: string; subHeader?: string; fields: Field[]; submitButton: string; textVariantButton?: string };
   goTo: (event: React.MouseEvent<HTMLButtonElement>) => void;
   handleSubmit: (event: React.FormEvent<HTMLFormElement>) => void;
 }
 
 const AuthTabs = memo(function AuthTabs({ formFields, goTo, handleSubmit }: AuthTabsProps) {
-  return (
-    <div className="flex w-full max-lg:justify-center md:w-auto">
-      <div className="flex h-[100dvh] w-full flex-col items-center justify-center px-[10%] lg:w-1/2">
-        <AnimatedForm {...formFields} onSubmit={handleSubmit} goTo={goTo} googleLogin="Login with Google" />
-      </div>
-    </div>
-  );
+  return <div className="w-full"><AnimatedForm {...formFields} onSubmit={handleSubmit} goTo={goTo} googleLogin="Continue with Google" /></div>;
 });
 
 const Label = memo(function Label({ className, ...props }: React.LabelHTMLAttributes<HTMLLabelElement>) {
-  return <label className={cn('text-sm font-medium leading-none', className)} {...props} />;
+  return <label className={cn('text-sm font-medium leading-none text-zinc-200', className)} {...props} />;
 });
 
 export { Input, BoxReveal, Ripple, OrbitingCircles, TechOrbitDisplay, AnimatedForm, AuthTabs, Label, BottomGradient };

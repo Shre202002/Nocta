@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/Button';
@@ -20,7 +21,7 @@ export function Navbar() {
   return (
     <header className={`fixed top-0 z-50 w-full border-b transition-[background,border-color] duration-300 ${scrolled ? 'bg-[rgba(10,10,10,0.8)] backdrop-blur-xl border-[var(--color-border-mid)]' : 'bg-transparent border-transparent'}`}>
       <div className="mx-auto flex max-w-6xl items-center justify-between px-12 py-6 md:px-8">
-        <Link href="/" className="text-[18px] leading-6 text-white">Nocta<span className="ml-1 inline-block h-1.5 w-1.5 rounded-full bg-[var(--color-accent)]" /></Link>
+        <Link href="/" className="inline-flex items-center gap-2 text-[18px] leading-6 text-white"><Image src="/logo-icon.png.png" width={20} height={20} alt="Nocta" className="rounded-sm" />Nocta<span className="ml-1 inline-block h-1.5 w-1.5 rounded-full bg-[var(--color-accent)]" /></Link>
 
         <nav className="hidden items-center gap-7 md:flex">
           {links.map((link, idx) => (
