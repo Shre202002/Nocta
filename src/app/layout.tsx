@@ -1,22 +1,16 @@
-import type { Metadata } from "next";
-import "./globals.css";
-<meta name="theme-color" content="#0d1117" />
-export const metadata = {
-  title: "Nocta — Deploy AI on your website in minutes",
-  description: "Turn any website into an AI chatbot. One embed. Live in 5 minutes.",
-  
-  icons: {
-    icon: "/share_icon.png",
-  },
+import type { Metadata } from 'next';
+import './globals.css';
+
+export const metadata: Metadata = {
+  title: 'Nocta — Ask anything. Ship faster.',
+  description: 'Nocta is the AI layer for modern products.',
+  icons: { icon: '/share_icon.png' },
 };
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body suppressHydrationWarning>{children}</body>
+      <body>{children}</body>
     </html>
   );
 }
